@@ -134,7 +134,9 @@ def open_with_notepadpp(path, search_text=None):
 
     command = [exe]
     if search_text and search_text.strip():
-        match_position = find_text_position(path, search_text.strip())
+        normalized_search_text = search_text.strip()
+        command.extend(["-search", normalized_search_text])
+        match_position = find_text_position(path, normalized_search_text)
         if match_position:
             line_number, column = match_position
             command.extend([f"-n{line_number}", f"-c{column}"])

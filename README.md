@@ -26,8 +26,10 @@ When `python main.py` is started, the application performs these steps:
 9. Downloads every matching audit file and opens the downloaded files in
    Notepad++.
 
-If a TransUID was entered, Notepad++ opens each file at its first occurrence.
-If the value is empty or is not found, the file opens normally.
+If a TransUID was entered, the `-search` argument is supplied when Notepad++
+opens the Tango log and each of the two audit file types. Each file also opens at
+the first occurrence found by LogLoader. If the value is empty, the files open
+normally.
 
 ## Hardcoded configuration
 
@@ -154,8 +156,9 @@ LogLoader searches for Notepad++ in this order:
 4. `%USERPROFILE%\AppData\Local\Programs\Notepad++\notepad++.exe`.
 
 The first TransUID match is found locally with a case-sensitive text search.
-LogLoader passes Notepad++ its supported `-n<line>` and `-c<column>` arguments
-to position the cursor. It does not use the unsupported `-search` argument.
+For every downloaded Tango log and audit file, LogLoader passes Notepad++ the
+`-search <TransUID>` argument. When a local match is found, it additionally
+passes `-n<line>` and `-c<column>` to position the cursor at that first match.
 
 ## Error handling
 
