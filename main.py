@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """SSH login script: connect as a normal user, then run commands with sudo."""
 
-import argparse
 import gzip
 import os
 import shutil
@@ -318,32 +317,6 @@ DEFAULT_SUDO_PASSWORD = "12345ja!@#$%"
 LOCAL_LOG_DIR = r"C:\Users\j.arvanitis\Desktop\Tango\Logs"
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="SSH connect and run a command as sudo.")
-    parser.add_argument("--port", type=int, default=22, help="SSH port")
-    parser.add_argument(
-        "--key-file",
-        help="Path to a private key file to use for SSH authentication",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=10,
-        help="SSH connection timeout in seconds (default: 10)",
-    )
-    parser.add_argument(
-        "--command",
-        default="whoami",
-        help="Command to run as the logged-in user before sudo",
-    )
-    parser.add_argument(
-        "--sudo-command",
-        default="whoami && pwd",
-        help="Command to run after sudo (default: whoami && pwd)",
-    )
-    return parser.parse_args()
-
-
 def open_selected_remote_file(
     host,
     port,
@@ -389,44 +362,49 @@ def map_bank_to_audit_code(bank):
 
 def main():
     install_interrupt_handler()
-    args = parse_args()
+
+    port = 22
+    key_file = None
+    timeout = 10
+    command = "whoami"
+    sudo_command = "su -c 'whoami'"
 
     try:
         sudo_password = DEFAULT_SUDO_PASSWORD
 
         code, out, err = run_command(
             DEFAULT_HOST,
-            args.port,
+            port,
             DEFAULT_USER,
-            args.command,
-            timeout=args.timeout,
-            key_file=args.key_file,
+            command,
+            timeout=timeout,
+            key_file=key_file,
         )
         if code != 0:
             raise RuntimeError(err.strip() or out.strip() or "SSH login failed")
 
         code, out, err = run_command(
             DEFAULT_HOST,
-            args.port,
+            port,
             DEFAULT_USER,
-            args.sudo_command,
+            sudo_command,
             sudo=True,
             sudo_password=sudo_password,
-            timeout=args.timeout,
-            key_file=args.key_file,
+            timeout=timeout,
+            key_file=key_file,
         )
         if code != 0:
             raise RuntimeError(err.strip() or out.strip() or "Sudo authentication failed")
 
         code, out, err = run_command(
             DEFAULT_HOST,
-            args.port,
+            port,
             DEFAULT_USER,
             "find /opt/tango/MLNPSP01/log -maxdepth 1 -name 'tango.log*' -print | sort",
             sudo=True,
             sudo_password=sudo_password,
-            timeout=args.timeout,
-            key_file=args.key_file,
+            timeout=timeout,
+            key_file=key_file,
         )
 
         file_list = [line.strip() for line in out.splitlines() if line.strip()]
@@ -443,11 +421,11 @@ def main():
                     print(f"Downloaded to: {selected_path}")
                     open_selected_remote_file(
                         DEFAULT_HOST,
-                        args.port,
+                        port,
                         DEFAULT_USER,
                         selected_path,
-                        args.timeout,
-                        args.key_file,
+                        timeout,
+                        key_file,
                         search_text=selected_text,
                     )
             else:
@@ -479,7 +457,7 @@ def main():
 
                 audit_list_code, audit_list_out, audit_list_err = run_command(
                     DEFAULT_HOST,
-                    args.port,
+                    port,
                     DEFAULT_USER,
                     (
                         "find /opt/tango/MLNPSP01/audit -maxdepth 1 -type f \\( "
@@ -490,8 +468,8 @@ def main():
                     ),
                     sudo=True,
                     sudo_password=sudo_password,
-                    timeout=args.timeout,
-                    key_file=args.key_file,
+                    timeout=timeout,
+                    key_file=key_file,
                 )
                 if audit_list_code == 0:
                     for line in audit_list_out.splitlines():
@@ -523,23 +501,23 @@ def main():
                     print(f"Checking audit file: {audit_remote_path}")
                     audit_check_code, audit_out, audit_err = run_command(
                         DEFAULT_HOST,
-                        args.port,
+                        port,
                         DEFAULT_USER,
                         f"test -f '{audit_remote_path}' && echo EXISTS || echo MISSING",
                         sudo=True,
                         sudo_password=sudo_password,
-                        timeout=args.timeout,
-                        key_file=args.key_file,
+                        timeout=timeout,
+                        key_file=key_file,
                     )
                     if audit_out.strip() == "EXISTS":
                         print(f"Opening audit file: {audit_remote_path}")
                         open_selected_remote_file(
                             DEFAULT_HOST,
-                            args.port,
+                            port,
                             DEFAULT_USER,
                             audit_remote_path,
-                            args.timeout,
-                            args.key_file,
+                            timeout,
+                            key_file,
                             search_text=selected_text,
                         )
                         downloaded_audits += 1
@@ -558,7 +536,7 @@ def main():
     except Exception as exc:
         message = str(exc)
         if "timeout" in message.lower() or "timed out" in message.lower():
-            print(f"SSH connection timed out after {args.timeout} seconds: {message}")
+            print(f"SSH connection timed out after {timeout} seconds: {message}")
         else:
             print(f"SSH connection failed: {message}")
         return 1

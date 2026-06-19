@@ -7,6 +7,11 @@ A small Python utility that connects to a hardcoded remote host over the system 
 - Host: `10.1.110.84`
 - SSH user: `j.arvanitis`
 - Sudo password: `12345ja!@#$%`
+- SSH port: `22`
+- Private key file: `None` (the system SSH configuration/agent is used)
+- SSH timeout: `10` seconds
+- Normal-user command: `whoami`
+- Sudo command: `su -c 'whoami'`
 
 ## Requirements
 
@@ -21,19 +26,14 @@ pip install -r requirements.txt
 
 ## Usage
 
-The host, SSH username, and sudo password are hardcoded. You only need to provide the SSH password if you do not want to type it interactively.
+The connection details and commands are hardcoded in `main.py`. Run the script without command-line options:
 
 ```bash
-python main.py --password "<SSH_PASSWORD>"
+python main.py
 ```
 
-The script supports:
-
-- `--port`: SSH port (default: 22)
-- `--key-file`: path to a private key file to use for authentication
-- `--timeout`: SSH timeout in seconds (default: 10)
-- `--command`: command to run as the normal user (default: `whoami`)
-- `--sudo-command`: command to run with sudo (default: `su -c 'whoami'`)
+To change the SSH port, private key file, timeout, normal-user command, or sudo
+command, edit the corresponding local variables at the beginning of `main()`.
 
 The initial SSH and sudo checks are silent when successful. Connection details,
 command output, usernames, and working directories are not printed; an error is
@@ -55,7 +55,10 @@ If you press Ctrl+C while the script is running, it now prints a message and clo
 ## Example
 
 ```bash
-python main.py --password "YourSSHPassword"
+python main.py
 ```
 
-This will connect to `10.1.110.84` as `j.arvanitis` by using the system SSH client, which matches the behavior of running `ssh j.arvanitis@10.1.110.84` manually. If your key is not in the default SSH agent location, you can also pass `--key-file`.
+This will connect to `10.1.110.84` as `j.arvanitis` by using the system SSH
+client, which matches the behavior of running `ssh j.arvanitis@10.1.110.84`
+manually. To use a private key outside the default SSH agent location, set the
+local `key_file` variable in `main()` to its path.
